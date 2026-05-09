@@ -48,10 +48,10 @@ export const initialData = {
       basePrice: 85000,
       stock: 12,
       active: true,
-      images: ["https://source.unsplash.com/1200x800/?motorcycle,defensa"],
+      images: ["/products/defensa1_main.svg"],
       imagesByModel: {
-        "CB125F": "https://source.unsplash.com/1200x800/?motorcycle,CB125F",
-        "FZ 150": "https://source.unsplash.com/1200x800/?motorcycle,FZ%20150"
+        "CB125F": "/products/defensa1_cb125f.svg",
+        "FZ 150": "/products/defensa1_fz150.svg"
       },
       description: "Defensa tubular de alta resistencia, acabado cromado, instalación directa sin modificar la moto.",
       customizable: true,
@@ -84,9 +84,9 @@ export const initialData = {
       basePrice: 95000,
       stock: 5,
       active: true,
-      images: ["https://source.unsplash.com/1200x800/?motorcycle,defensa,sport"],
+      images: ["/products/defensa2_main.svg"],
       imagesByModel: {
-        "Pulsar NS200": "https://source.unsplash.com/1200x800/?motorcycle,Pulsar%20NS200"
+        "Pulsar NS200": "/products/defensa2_ns200.svg"
       },
       description: "Defensa deportiva de perfil bajo, ideal para motos tipo naked y deportivas.",
       customizable: true,
@@ -114,7 +114,7 @@ export const initialData = {
       basePrice: 25000,
       stock: 30,
       active: true,
-      images: ["https://source.unsplash.com/1200x800/?motorcycle,plate,license"],
+      images: ["/products/portaplaca.svg"],
       description: "Portaplaca universal con luz LED integrada.",
       customizable: false
     },
@@ -127,7 +127,7 @@ export const initialData = {
       basePrice: 45000,
       stock: 8,
       active: true,
-      images: ["https://source.unsplash.com/1200x800/?motorcycle,luggage,rack"],
+      images: ["/products/parrilla.svg"],
       description: "Parrilla metálica reforzada para carga posterior.",
       customizable: false
     }
