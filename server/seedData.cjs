@@ -21,10 +21,10 @@ module.exports = {
       basePrice: 85000,
       stock: 12,
       active: true,
-      images: ['https://source.unsplash.com/1200x800/?motorcycle,defensa'],
+      images: ['https://source.unsplash.com/1200x800/?motorcycle,crashbar,honda'],
       imagesByModel: {
-        'CB125F': 'https://source.unsplash.com/1200x800/?motorcycle,CB125F',
-        'FZ 150': 'https://source.unsplash.com/1200x800/?motorcycle,FZ%20150'
+        'CB125F': 'https://source.unsplash.com/1200x800/?honda,CB125F,motorcycle',
+        'FZ 150': 'https://source.unsplash.com/1200x800/?yamaha,FZ150,motorcycle'
       },
       description: 'Defensa tubular de alta resistencia, acabado cromado, instalación directa sin modificar la moto.',
       customizable: true,
@@ -57,9 +57,9 @@ module.exports = {
       basePrice: 95000,
       stock: 5,
       active: true,
-      images: ['https://source.unsplash.com/1200x800/?motorcycle,defensa,sport'],
+      images: ['https://source.unsplash.com/1200x800/?motorcycle,streetfighter,crashbar'],
       imagesByModel: {
-        'Pulsar NS200': 'https://source.unsplash.com/1200x800/?motorcycle,Pulsar%20NS200'
+        'Pulsar NS200': 'https://source.unsplash.com/1200x800/?bajaj,Pulsar,NS200'
       },
       description: 'Defensa deportiva de perfil bajo, ideal para motos tipo naked y deportivas.',
       customizable: true,
@@ -88,7 +88,7 @@ module.exports = {
       basePrice: 25000,
       stock: 30,
       active: true,
-      images: ['https://source.unsplash.com/1200x800/?motorcycle,plate,license'],
+      images: ['https://source.unsplash.com/1200x800/?motorcycle,rear,license,plate'],
       imagesByModel: {},
       description: 'Portaplaca universal con luz LED integrada.',
       customizable: false,
@@ -103,7 +103,7 @@ module.exports = {
       basePrice: 45000,
       stock: 8,
       active: true,
-      images: ['https://source.unsplash.com/1200x800/?motorcycle,luggage,rack'],
+      images: ['https://source.unsplash.com/1200x800/?motorcycle,luggage,rack,rear'],
       imagesByModel: {},
       description: 'Parrilla metálica reforzada para carga posterior.',
       customizable: false,

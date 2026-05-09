@@ -27,9 +27,9 @@ export default function ProductCard({ product, motoModel }){
     : product.compatibleBrands?.length
       ? `Compatible con ${product.compatibleBrands.length} marca(s)`
       : 'Compatibilidad universal'
-  const mainImage = (product.images && product.images[0]) || localFallbackByProduct[product.id] || 'https://placehold.co/400x300/1a1a1a/e63312?text=RMP+Motos'
+  const mainImage = (product.images && product.images[0]) || localFallbackByProduct[product.id] || 'https://source.unsplash.com/1200x800/?motorcycle'
   const modelImage = motoModel && product.imagesByModel?.[motoModel]
-  const fallbackImage = (motoModel && localFallbackByModel[motoModel]) || localFallbackByProduct[product.id] || 'https://placehold.co/400x300/1a1a1a/e63312?text=RMP+Motos'
+  const fallbackImage = (motoModel && localFallbackByModel[motoModel]) || localFallbackByProduct[product.id] || 'https://source.unsplash.com/1200x800/?motorcycle'
 
   const [lightbox, setLightbox] = useState(null)
   const [displayImage, setDisplayImage] = useState(modelImage || mainImage)
