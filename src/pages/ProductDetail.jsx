@@ -16,16 +16,16 @@ export default function ProductDetail(){
   const [lightbox, setLightbox] = useState(null)
 
   const localFallbackByProduct = {
-    'def-001': '/products/defensa1_main.svg',
-    'def-002': '/products/defensa2_main.svg',
-    'acc-001': '/products/portaplaca.svg',
-    'acc-002': '/products/parrilla.svg'
+    'def-001': 'https://loremflickr.com/1200/800/motorcycle,crashbar?lock=101',
+    'def-002': 'https://loremflickr.com/1200/800/sport,motorcycle?lock=104',
+    'acc-001': 'https://loremflickr.com/1200/800/motorcycle,rear?lock=106',
+    'acc-002': 'https://loremflickr.com/1200/800/motorcycle,luggage?lock=107'
   }
 
   const localFallbackByModel = {
-    'CB125F': '/products/defensa1_cb125f.svg',
-    'FZ 150': '/products/defensa1_fz150.svg',
-    'Pulsar NS200': '/products/defensa2_ns200.svg'
+    'CB125F': 'https://loremflickr.com/1200/800/honda,motorcycle?lock=102',
+    'FZ 150': 'https://loremflickr.com/1200/800/yamaha,motorcycle?lock=103',
+    'Pulsar NS200': 'https://loremflickr.com/1200/800/bajaj,motorcycle?lock=105'
   }
 
   if (!product) return <div className="p-6">Producto no encontrado</div>

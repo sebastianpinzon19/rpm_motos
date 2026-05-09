@@ -15,6 +15,26 @@ const sanitizePhone = (phone, fallback = initialData.settings.whatsappNumber) =>
   return digits.length >= 10 ? digits : String(fallback || '').replace(/\D/g, '').slice(0, 15)
 }
 
+const REAL_IMAGE_FALLBACK = 'https://loremflickr.com/1200/800/motorcycle?lock=900'
+
+const legacyImageMap = {
+  '/products/defensa1_main.svg': 'https://loremflickr.com/1200/800/motorcycle,crashbar?lock=101',
+  '/products/defensa1_cb125f.svg': 'https://loremflickr.com/1200/800/honda,motorcycle?lock=102',
+  '/products/defensa1_fz150.svg': 'https://loremflickr.com/1200/800/yamaha,motorcycle?lock=103',
+  '/products/defensa2_main.svg': 'https://loremflickr.com/1200/800/sport,motorcycle?lock=104',
+  '/products/defensa2_ns200.svg': 'https://loremflickr.com/1200/800/bajaj,motorcycle?lock=105',
+  '/products/portaplaca.svg': 'https://loremflickr.com/1200/800/motorcycle,rear?lock=106',
+  '/products/parrilla.svg': 'https://loremflickr.com/1200/800/motorcycle,luggage?lock=107'
+}
+
+const normalizeImageUrl = (url) => {
+  const clean = String(url || '').trim()
+  if (!clean) return REAL_IMAGE_FALLBACK
+  if (legacyImageMap[clean]) return legacyImageMap[clean]
+  if (clean.includes('placehold.co')) return REAL_IMAGE_FALLBACK
+  return clean
+}
+
 const sanitizeProduct = (product) => ({
   ...product,
   id: String(product.id || '').trim(),
@@ -26,8 +46,12 @@ const sanitizeProduct = (product) => ({
   active: Boolean(product.active),
   compatibleBrands: Array.isArray(product.compatibleBrands) ? product.compatibleBrands : [],
   compatibleModels: Array.isArray(product.compatibleModels) ? product.compatibleModels : [],
-  images: Array.isArray(product.images) ? product.images : [],
-  imagesByModel: typeof product.imagesByModel === 'object' && product.imagesByModel !== null ? product.imagesByModel : {},
+  images: Array.isArray(product.images) && product.images.length > 0
+    ? product.images.map(normalizeImageUrl)
+    : [REAL_IMAGE_FALLBACK],
+  imagesByModel: typeof product.imagesByModel === 'object' && product.imagesByModel !== null
+    ? Object.fromEntries(Object.entries(product.imagesByModel).map(([model, image]) => [model, normalizeImageUrl(image)]))
+    : {},
   customizable: Boolean(product.customizable),
   options: product.options || undefined
 })
