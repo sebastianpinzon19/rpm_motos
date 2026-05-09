@@ -32,10 +32,15 @@ const sanitizeProduct = (product) => ({
   options: product.options || undefined
 })
 
+const pickArray = (candidate, fallback) => {
+  if (Array.isArray(candidate) && candidate.length > 0) return candidate
+  return fallback
+}
+
 const sanitizePayload = (payload) => {
-  const brands = Array.isArray(payload?.brands) ? payload.brands : initialData.brands
-  const categories = Array.isArray(payload?.categories) ? payload.categories : initialData.categories
-  const products = Array.isArray(payload?.products) ? payload.products.map(sanitizeProduct) : initialData.products.map(sanitizeProduct)
+  const brands = pickArray(payload?.brands, initialData.brands)
+  const categories = pickArray(payload?.categories, initialData.categories)
+  const products = pickArray(payload?.products, initialData.products).map(sanitizeProduct)
   const settings = {
     ...initialData.settings,
     ...(payload?.settings || {}),
@@ -113,6 +118,7 @@ export const StoreProvider = ({ children }) => {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [settings, setSettings] = useState(initialData.settings)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   const setFromPayload = (payload) => {
     const clean = sanitizePayload(payload)
@@ -145,6 +151,8 @@ export const StoreProvider = ({ children }) => {
         setCategories(initialData.categories)
         setProducts(initialData.products.map(sanitizeProduct))
         setSettings(initialData.settings)
+      } finally {
+        setIsHydrated(true)
       }
     }
     bootstrap()
@@ -170,9 +178,10 @@ export const StoreProvider = ({ children }) => {
 
   // persist
   useEffect(() => {
+    if (!isHydrated) return
     const payload = { brands, categories, products, settings }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
-  }, [brands, categories, products, settings])
+  }, [brands, categories, products, settings, isHydrated])
 
   // product updates
   const updateProduct = async (id, changes) => {
