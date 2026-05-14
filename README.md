@@ -31,8 +31,10 @@ Copia `.env.example` (si existe) a `.env` y ajusta las credenciales de PostgreSQ
 
 Variables importantes:
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`
-- `JWT_SECRET` (usar valor fuerte en producción)
-- `ADMIN_API_KEY` (opcional)
+- `JWT_SECRET` (mínimo 32 caracteres; en `NODE_ENV=production` es obligatorio y no puede ser un valor de ejemplo)
+- `ADMIN_API_KEY` (opcional en local; en producción mínimo 16 caracteres y distinto del valor de ejemplo)
+- `ALLOWED_ORIGINS` (opcional en local; en producción al menos una URL del front, separadas por coma, p. ej. `https://tu-app.vercel.app`)
+- `VITE_API_BASE` (URL pública del API para el build del front)
 
 3) Ejecutar en desarrollo
 
@@ -86,9 +88,11 @@ Recomendación rápida:
 3. En Vercel, añade `VITE_API_BASE` apuntando a la URL del servidor.
 
 Variables a establecer en tu host de backend:
+- `NODE_ENV=production`
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`
-- `JWT_SECRET` (obligatorio)
-- `ADMIN_API_KEY` (opcional)
+- `JWT_SECRET` (obligatorio, mínimo 32 caracteres, no uses el valor de ejemplo)
+- `ADMIN_API_KEY` (obligatorio en producción, mínimo 16 caracteres)
+- `ALLOWED_ORIGINS` (obligatorio en producción: URLs del front, separadas por coma)
 
 ---
 

@@ -7,12 +7,49 @@ const rateLimit = require('express-rate-limit')
 const dotenv = require('dotenv')
 const { Pool, Client } = require('pg')
 const seedData = require('./seedData.cjs')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs/promises')
 const jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid')
 const multer = require('multer')
 
 dotenv.config()
+
+const isProduction = process.env.NODE_ENV === 'production'
+
+const parseAllowedOrigins = () => {
+  const raw = String(process.env.ALLOWED_ORIGINS || '').trim()
+  if (raw) {
+    return raw.split(',').map((s) => s.trim()).filter(Boolean)
+  }
+  return ['http://localhost:5173', 'http://127.0.0.1:5173']
+}
+
+const assertProductionConfig = () => {
+  if (!isProduction) return
+  const errors = []
+  const jwtSecretValue = String(process.env.JWT_SECRET || '').trim()
+  const weakJwt = new Set(['CHANGE_THIS_TO_A_STRONG_SECRET', 'change_this_to_a_strong_secret'])
+  if (jwtSecretValue.length < 32 || weakJwt.has(jwtSecretValue)) {
+    errors.push('JWT_SECRET debe existir, tener al menos 32 caracteres y no ser un valor de ejemplo.')
+  }
+  if (!String(process.env.PGPASSWORD || '').trim()) {
+    errors.push('PGPASSWORD es obligatorio en producción.')
+  }
+  const apiKey = String(process.env.ADMIN_API_KEY || '').trim()
+  if (apiKey.length < 16 || apiKey === 'rmp-local-admin-key') {
+    errors.push('ADMIN_API_KEY es obligatorio en producción (mínimo 16 caracteres, distinto del valor local de ejemplo).')
+  }
+  const origins = parseAllowedOrigins()
+  if (origins.length === 0) {
+    errors.push('ALLOWED_ORIGINS debe listar al menos un origen (URLs del front separadas por coma).')
+  }
+  if (errors.length) {
+    console.error('[rmp-api] Configuración inválida en NODE_ENV=production:\n', errors.map((e) => `  - ${e}`).join('\n'))
+    process.exit(1)
+  }
+}
+
+assertProductionConfig()
 
 const app = express()
 const port = Number(process.env.PORT || 8787)
@@ -26,7 +63,7 @@ const pgConfig = {
   database: process.env.PGDATABASE || 'rmp_motos'
 }
 
-const allowedOrigins = ['http://localhost:5173']
+const allowedOrigins = parseAllowedOrigins()
 
 const adminKey = process.env.ADMIN_API_KEY || 'rmp-local-admin-key'
 const jwtSecret = process.env.JWT_SECRET || 'CHANGE_THIS_TO_A_STRONG_SECRET'
@@ -77,7 +114,13 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }))
-app.use(cors({ origin: allowedOrigins }))
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true)
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    return callback(null, false)
+  }
+}))
 app.use(express.json({ limit: '100kb' }))
 app.use(rateLimit({
   windowMs: 60 * 1000,
