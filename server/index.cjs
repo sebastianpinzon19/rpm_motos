@@ -54,6 +54,7 @@ assertProductionConfig()
 const app = express()
 const port = Number(process.env.PORT || 8787)
 let pool
+let startupPromise
 
 const pgConfig = {
   host: process.env.PGHOST || 'localhost',
@@ -216,14 +217,23 @@ const ensureDatabaseExists = async () => {
 }
 
 const withClient = async (handler, res) => {
-  const client = await pool.connect()
   try {
+    await ensureDatabaseReady()
+  } catch (error) {
+    console.error('Unable to initialize database:', error)
+    if (!res.headersSent) res.status(500).json({ error: 'Error al inicializar la base de datos' })
+    return
+  }
+
+  let client
+  try {
+    client = await pool.connect()
     return await handler(client)
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: 'Error interno del servidor' })
+    if (!res.headersSent) res.status(500).json({ error: 'Error interno del servidor' })
   } finally {
-    client.release()
+    if (client) client.release()
   }
 }
 
@@ -310,6 +320,22 @@ const runMigrationsAndSeed = async () => {
   } finally {
     client.release()
   }
+}
+
+const ensureDatabaseReady = async () => {
+  if (pool) return
+  if (!startupPromise) {
+    startupPromise = ensureDatabaseExists()
+      .then(() => {
+        pool = new Pool(pgConfig)
+        return runMigrationsAndSeed()
+      })
+      .catch((error) => {
+        startupPromise = undefined
+        throw error
+      })
+  }
+  await startupPromise
 }
 
 // Auth endpoints
@@ -592,11 +618,10 @@ const attachSpaFromDist = () => {
 
 attachSpaFromDist()
 
-ensureDatabaseExists()
-  .then(() => {
-    pool = new Pool(pgConfig)
-    return runMigrationsAndSeed()
-  })
+if (process.env.VERCEL) {
+  module.exports = app
+} else {
+  ensureDatabaseReady()
   .then(() => {
     app.listen(port, () => {
       const hasSpa = fs.existsSync(path.join(distDir, 'index.html'))
@@ -607,3 +632,4 @@ ensureDatabaseExists()
     console.error('Unable to start API:', error)
     process.exit(1)
   })
+}

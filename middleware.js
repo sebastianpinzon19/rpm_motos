@@ -22,13 +22,7 @@ export default async function middleware (request) {
   const url = new URL(request.url)
   const base = process.env.API_PROXY_TARGET?.trim()?.replace(/\/$/, '')
   if (!base) {
-    return new Response(
-      JSON.stringify({
-        error: 'API no configurada en Vercel',
-        hint: 'Añade API_PROXY_TARGET (URL raíz del servidor Node, p. ej. https://xxx.railway.app). En el backend, incluye la URL de tu sitio en Vercel dentro de ALLOWED_ORIGINS.'
-      }),
-      { status: 503, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
-    )
+    return fetch(request)
   }
 
   const targetUrl = `${base}${url.pathname}${url.search}`
