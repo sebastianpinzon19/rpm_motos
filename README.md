@@ -70,20 +70,23 @@ En Vercel u otro hosting **solo estático** no existe `/api` en ese dominio: usa
 
 ## Despliegue en Vercel (https://rpm-motos.vercel.app)
 
-Vercel solo aloja el **build estático** (`dist/`). El **API Express** debe estar en otro servicio (Railway, Render, Fly…) con `npm start`, o al menos publicado con Node + Postgres.
+Vercel ahora despliega **frontend + backend** desde este mismo repo:
+- Frontend estático desde `dist/`.
+- API Express como función Node en `api/index.cjs`.
 
 ### Qué hace este repo en Vercel
 
-1. **`vercel.json`** usa `buildCommand` + `outputDirectory: dist` (ya no se reenvía `/api` al disco equivocado).
-2. **`middleware.js`** (Node en Vercel) **reenvía** las peticiones a tu API real:
-   - `/api/*` → tu servidor Express  
-   - `/products/*` → mismo servidor (imágenes subidas y estáticos del API)
+1. **`vercel.json`** publica `dist/` y enruta:
+   - `/api/*` → `api/index.cjs`
+   - `/products/*` → `api/index.cjs`
+2. **`api/index.cjs`** reutiliza el backend Express de `server/index.cjs` en modo serverless.
+3. **`middleware.js`** solo hace proxy externo cuando defines `API_PROXY_TARGET`; si no existe, deja pasar la petición al backend del mismo proyecto.
 
 ### Pasos obligatorios en Vercel
 
 1. **Variables de entorno** (Settings → Environment Variables → Production):
-   - **`API_PROXY_TARGET`** = URL raíz de tu API **sin barra final**, por ejemplo `https://rmp-motos-production.up.railway.app`  
-   - No hace falta `VITE_API_BASE` si usas este proxy (el navegador sigue llamando a `/api/...` en tu dominio `.vercel.app`).
+   - Para backend en el mismo Vercel: define variables de `server/.env` (`PG*`, `JWT_SECRET`, `ADMIN_API_KEY`, `ALLOWED_ORIGINS`).
+   - `API_PROXY_TARGET` es opcional (solo si quieres proxy a un backend externo).
 
 2. **En el servidor Express** (Railway, etc.):
    - **`ALLOWED_ORIGINS`**: incluye `https://rpm-motos.vercel.app` (y preview si usas previews de Vercel).
@@ -93,7 +96,7 @@ Vercel solo aloja el **build estático** (`dist/`). El **API Express** debe esta
 
 ### Si aún falla
 
-- Comprueba en el navegador **Network** → `/api/store`: si ves **503** con JSON `API no configurada`, falta `API_PROXY_TARGET` en Vercel.
+- Comprueba en el navegador **Network** → `/api/store`: si falla, revisa variables `PG*`/`JWT_SECRET`/`ADMIN_API_KEY` en Vercel.
 - Si ves **502**, Vercel no alcanza tu URL (mal escrita, API caída o firewall).
 - Si el API responde **403** en admin, casi siempre es **CORS / origen**: revisa `ALLOWED_ORIGINS` en el backend.
 
@@ -102,9 +105,8 @@ Vercel solo aloja el **build estático** (`dist/`). El **API Express** debe esta
 - Definir **`VITE_API_BASE`** en Vercel (build) apuntando al API (el cliente llama directo al otro dominio) **y** CORS en el backend. El proxy anterior evita exponer dos dominios al usuario y evita `VITE_API_BASE`.
 
 Nota sobre el backend:
-- **Recomendado (mismo sitio):** `npm run build` y `npm start` en Render/Railway/etc.: la web y `/api` comparten dominio; no necesitas `VITE_API_BASE`.
-- Si el front está solo en **Vercel estático** y el API en otro sitio: usa **`API_PROXY_TARGET`** en Vercel (recomendado) o `VITE_API_BASE` + CORS en el API.
-- Migrar el backend a funciones serverless (`/api/*`) en Vercel es otra opción (refactor aparte).
+- En Vercel este repo ya soporta backend en funciones (`/api/*`).
+- Si quieres usar un backend externo, puedes mantener `API_PROXY_TARGET`.
 
 ---
 
