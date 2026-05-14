@@ -168,10 +168,8 @@ export const StoreProvider = ({ children }) => {
             const parsed = JSON.parse(raw)
             setFromPayload(parsed)
             sileo.warning({
-              title: 'Sin conexión con la API',
-              description: import.meta.env.PROD && !String(import.meta.env.VITE_API_BASE || '').trim()
-                ? 'Falta VITE_API_BASE en el build (URL del backend). Mientras tanto se usan datos guardados en este dispositivo.'
-                : 'Mostrando datos guardados en este dispositivo.'
+              title: 'Sin conexión con el servidor',
+              description: 'Mostrando datos guardados en este dispositivo.'
             })
             return
           }
@@ -189,9 +187,7 @@ export const StoreProvider = ({ children }) => {
         setSettings(initialData.settings)
         sileo.info({
           title: 'Modo demostración',
-          description: import.meta.env.PROD && !String(import.meta.env.VITE_API_BASE || '').trim()
-            ? 'Define VITE_API_BASE en Vercel con la URL pública de tu API y vuelve a desplegar. Añade la URL de esta web en ALLOWED_ORIGINS del servidor.'
-            : 'No hay API ni datos guardados; se muestra el catálogo de ejemplo.'
+          description: 'No se pudo cargar el catálogo desde el servidor; se muestra el catálogo de ejemplo.'
         })
       } finally {
         setIsHydrated(true)

@@ -9,7 +9,7 @@ Este repositorio contiene:
 
 Resumen rápido:
 - Frontend build: `dist/` (Vite)
-- API local: `server/index.cjs` (Express)
+- API: `server/index.cjs` (Express). Si existe `dist/`, **sirve la tienda y el admin en el mismo puerto** que `/api` (no hace falta `VITE_API_BASE`).
 
 ---
 
@@ -33,8 +33,8 @@ Variables importantes:
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`
 - `JWT_SECRET` (mínimo 32 caracteres; en `NODE_ENV=production` es obligatorio y no puede ser un valor de ejemplo)
 - `ADMIN_API_KEY` (opcional en local; en producción mínimo 16 caracteres y distinto del valor de ejemplo)
-- `ALLOWED_ORIGINS` (opcional en local; en producción al menos una URL del front, separadas por coma, p. ej. `https://tu-app.vercel.app`)
-- `VITE_API_BASE` (URL pública del API para el build del front)
+- `ALLOWED_ORIGINS` (opcional en local; en producción al menos una URL del front, separadas por coma). Si el navegador usa el **mismo dominio** que el API (despliegue con `npm start`), el servidor también acepta ese origen automáticamente.
+- `VITE_API_BASE` solo si el **HTML se sirve en un dominio distinto** al del API (p. ej. Vercel estático + API en otro host). Déjalo vacío en local (proxy de Vite) o en despliegue todo-en-uno.
 
 3) Ejecutar en desarrollo
 
@@ -49,11 +49,22 @@ npm run dev
 npm run dev:full
 ```
 
-4) Build de producción (frontend)
+4) Build y servir **tienda + API en el mismo puerto** (Render, Railway, Fly, VPS)
+
+```bash
+npm run build
+npm start
+```
+
+Abre `http://localhost:8787` (o el `PORT` que definas): catálogo, rutas de React y `/api/*` van al mismo servidor. Admin: `/admin` o `/admin.html`.
+
+5) Build de solo frontend (por ejemplo para subir `dist/` a un CDN sin Node)
 
 ```bash
 npm run build
 ```
+
+En Vercel u otro hosting **solo estático** no existe `/api` en ese dominio: define `VITE_API_BASE` o despliega todo con `npm start` en un host Node.
 
 ---
 
@@ -74,9 +85,9 @@ Pasos:
 5. En el servidor Express, incluye la URL exacta de tu web en Vercel dentro de `ALLOWED_ORIGINS` (CORS); si no, el navegador bloqueará las respuestas aunque el API exista.
 
 Nota sobre el backend:
-- El backend Express está pensado para desarrollo local. Para producción tienes 2 opciones:
-  1. Desplegar el backend en un servicio dedicado (Render, Railway, Fly, Heroku) y fijar `VITE_API_BASE` en Vercel.
-  2. Migrar el backend a funciones serverless (`/api/*`) para alojarlo en Vercel — puedo hacer esta migración si lo deseas.
+- **Recomendado (mismo sitio):** `npm run build` y `npm start` en Render/Railway/etc.: la web y `/api` comparten dominio; no necesitas `VITE_API_BASE`.
+- Si el front está solo en **Vercel estático** y el API en otro sitio: define `VITE_API_BASE` en Vercel y `ALLOWED_ORIGINS` en el API.
+- Migrar el backend a funciones serverless (`/api/*`) en Vercel es otra opción (refactor aparte).
 
 ---
 
@@ -84,8 +95,8 @@ Nota sobre el backend:
 
 Recomendación rápida:
 1. Desplegar PostgreSQL en un servicio gestionado (Supabase, Render Postgres, Railway).
-2. Desplegar el servidor Node en Render/Heroku/Fly.
-3. En Vercel, añade `VITE_API_BASE` apuntando a la URL del servidor.
+2. Desplegar Node con **Build:** `npm run build` y **Start:** `npm start` (misma app sirve `dist/` y la API).
+3. Si en cambio el front sigue en Vercel y el API aparte: añade `VITE_API_BASE` en Vercel apuntando al servidor Node.
 
 Variables a establecer en tu host de backend:
 - `NODE_ENV=production`
@@ -139,7 +150,8 @@ El panel admin ahora permite **subir imágenes directamente**:
 ## Scripts útiles
 
 - `npm run dev` — Vite dev server
-- `npm run server` — Levanta Express API local
+- `npm run server` — Solo API (sin servir `dist/`). Útil con `npm run dev` en paralelo.
+- `npm start` — API y, si existe `dist/`, tienda + admin en el mismo `PORT`
 - `npm run dev:full` — Ejecuta backend + frontend en paralelo
 - `npm run build` — Build frontend (produce `dist/`)
 - `npm run vercel-build` — Script pensado para Vercel (ejecuta `build`)

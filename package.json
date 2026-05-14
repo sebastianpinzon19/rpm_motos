@@ -8,7 +8,8 @@
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "vite build",
     "vercel-build": "npm run build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server/index.cjs"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",

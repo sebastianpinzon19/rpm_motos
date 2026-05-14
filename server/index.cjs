@@ -65,6 +65,18 @@ const pgConfig = {
 
 const allowedOrigins = parseAllowedOrigins()
 
+/** Mismo host que el API (p. ej. todo servido por Express en un solo puerto). */
+const sameHostAsRequest = (req, origin) => {
+  try {
+    const u = new URL(origin)
+    const raw = (req.get('x-forwarded-host') || req.get('host') || '').trim()
+    const hostname = raw.split(':')[0]
+    return Boolean(hostname && u.hostname === hostname)
+  } catch (_) {
+    return false
+  }
+}
+
 const adminKey = process.env.ADMIN_API_KEY || 'rmp-local-admin-key'
 const jwtSecret = process.env.JWT_SECRET || 'CHANGE_THIS_TO_A_STRONG_SECRET'
 const accessTokenExpiry = process.env.ACCESS_EXPIRES || '1h'
@@ -114,13 +126,16 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }))
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true)
-    if (allowedOrigins.includes(origin)) return callback(null, true)
-    return callback(null, false)
-  }
-}))
+app.use((req, res, next) => {
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true)
+      if (allowedOrigins.includes(origin)) return callback(null, true)
+      if (sameHostAsRequest(req, origin)) return callback(null, true)
+      return callback(null, false)
+    }
+  })(req, res, next)
+})
 app.use(express.json({ limit: '100kb' }))
 app.use(rateLimit({
   windowMs: 60 * 1000,
@@ -168,7 +183,7 @@ const upload = multer({
 
 const requireAdmin = async (req, res, next) => {
   const origin = req.header('origin')
-  if (origin && !allowedOrigins.includes(origin)) {
+  if (origin && !allowedOrigins.includes(origin) && !sameHostAsRequest(req, origin)) {
     return res.status(403).json({ error: 'Origen no permitido' })
   }
 
@@ -554,6 +569,29 @@ app.patch('/api/settings', requireAdmin, async (req, res) => {
   }, res)
 })
 
+const distDir = path.join(__dirname, '../dist')
+
+const attachSpaFromDist = () => {
+  const indexHtml = path.join(distDir, 'index.html')
+  if (!fs.existsSync(indexHtml)) {
+    console.warn('[rmp] dist/ no encontrado. Ejecuta `npm run build` para servir la web y el admin desde este mismo puerto que la API.')
+    return
+  }
+  app.use(express.static(distDir))
+  const sendAdmin = (_req, res) => res.sendFile(path.join(distDir, 'admin.html'))
+  app.get(['/admin', '/admin/'], sendAdmin)
+  app.get('/admin.html', sendAdmin)
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) return next()
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+    const ext = path.extname(req.path)
+    if (ext && ext !== '.html') return next()
+    res.sendFile(indexHtml, (err) => (err ? next(err) : undefined))
+  })
+}
+
+attachSpaFromDist()
+
 ensureDatabaseExists()
   .then(() => {
     pool = new Pool(pgConfig)
@@ -561,7 +599,8 @@ ensureDatabaseExists()
   })
   .then(() => {
     app.listen(port, () => {
-      console.log(`RMP API running on http://localhost:${port}`)
+      const hasSpa = fs.existsSync(path.join(distDir, 'index.html'))
+      console.log(`RMP API + ${hasSpa ? 'web (dist/)' : 'solo API'} → http://localhost:${port}`)
     })
   })
   .catch((error) => {
