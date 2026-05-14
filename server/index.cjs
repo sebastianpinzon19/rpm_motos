@@ -324,18 +324,17 @@ const runMigrationsAndSeed = async (dbPool) => {
 
 const ensureDatabaseReady = async () => {
   if (!startupPromise) {
-    const initPromise = (async () => {
+    startupPromise = (async () => {
       await ensureDatabaseExists()
       const nextPool = new Pool(pgConfig)
       await runMigrationsAndSeed(nextPool)
       pool = nextPool
       return pool
-    })
-    startupPromise = initPromise
+    })()
     try {
-      await initPromise
+      await startupPromise
     } catch (error) {
-      if (startupPromise === initPromise) startupPromise = undefined
+      startupPromise = undefined
       throw error
     }
     return
