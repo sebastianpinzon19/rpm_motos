@@ -237,11 +237,11 @@ const withClient = async (handler, res) => {
   }
 }
 
-const runMigrationsAndSeed = async () => {
+const runMigrationsAndSeed = async (dbPool) => {
   const schemaPath = path.join(__dirname, 'schema.sql')
   const schemaSql = fs.readFileSync(schemaPath, 'utf8')
 
-  const client = await pool.connect()
+  const client = await dbPool.connect()
   try {
     await client.query('BEGIN')
     await client.query(schemaSql)
@@ -323,19 +323,22 @@ const runMigrationsAndSeed = async () => {
 }
 
 const ensureDatabaseReady = async () => {
-  if (pool) return
-  if (!startupPromise) {
-    startupPromise = ensureDatabaseExists()
-      .then(() => {
-        pool = new Pool(pgConfig)
-        return runMigrationsAndSeed()
-      })
-      .catch((error) => {
-        startupPromise = undefined
-        throw error
-      })
+  if (startupPromise) {
+    await startupPromise
+    return
   }
-  await startupPromise
+  if (pool) return
+  startupPromise = (async () => {
+    await ensureDatabaseExists()
+    const nextPool = new Pool(pgConfig)
+    await runMigrationsAndSeed(nextPool)
+    pool = nextPool
+  })()
+  try {
+    await startupPromise
+  } finally {
+    startupPromise = undefined
+  }
 }
 
 // Auth endpoints
