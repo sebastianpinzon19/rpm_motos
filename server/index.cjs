@@ -221,7 +221,7 @@ const withClient = async (handler, res) => {
     await ensureDatabaseReady()
   } catch (error) {
     console.error('Unable to initialize database:', error)
-    if (!res.headersSent) res.status(500).json({ error: 'Error interno del servidor' })
+    if (!res.headersSent) res.status(500).json({ error: 'Error al inicializar la base de datos' })
     return
   }
 
