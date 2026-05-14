@@ -217,15 +217,23 @@ const ensureDatabaseExists = async () => {
 }
 
 const withClient = async (handler, res) => {
-  await ensureDatabaseReady()
-  const client = await pool.connect()
   try {
+    await ensureDatabaseReady()
+  } catch (error) {
+    console.error('Unable to initialize database:', error)
+    if (!res.headersSent) res.status(500).json({ error: 'Error interno del servidor' })
+    return
+  }
+
+  let client
+  try {
+    client = await pool.connect()
     return await handler(client)
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: 'Error interno del servidor' })
+    if (!res.headersSent) res.status(500).json({ error: 'Error interno del servidor' })
   } finally {
-    client.release()
+    if (client) client.release()
   }
 }
 
