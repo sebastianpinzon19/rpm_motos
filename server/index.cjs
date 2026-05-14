@@ -323,22 +323,19 @@ const runMigrationsAndSeed = async (dbPool) => {
 }
 
 const ensureDatabaseReady = async () => {
-  if (startupPromise) {
-    await startupPromise
-    return
+  if (!startupPromise) {
+    startupPromise = (async () => {
+      await ensureDatabaseExists()
+      const nextPool = new Pool(pgConfig)
+      await runMigrationsAndSeed(nextPool)
+      pool = nextPool
+      return pool
+    })().catch((error) => {
+      startupPromise = undefined
+      throw error
+    })
   }
-  if (pool) return
-  startupPromise = (async () => {
-    await ensureDatabaseExists()
-    const nextPool = new Pool(pgConfig)
-    await runMigrationsAndSeed(nextPool)
-    pool = nextPool
-  })()
-  try {
-    await startupPromise
-  } finally {
-    startupPromise = undefined
-  }
+  await startupPromise
 }
 
 // Auth endpoints
