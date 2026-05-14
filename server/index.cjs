@@ -329,7 +329,6 @@ const ensureDatabaseReady = async () => {
       const nextPool = new Pool(pgConfig)
       await runMigrationsAndSeed(nextPool)
       pool = nextPool
-      return pool
     })()
   }
   const readyPromise = startupPromise
