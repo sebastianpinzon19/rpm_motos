@@ -337,7 +337,6 @@ const ensureDatabaseReady = async () => {
       startupPromise = undefined
       throw error
     }
-    return
   }
   await startupPromise
 }
