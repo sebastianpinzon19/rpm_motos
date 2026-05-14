@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { sileo } from 'sileo'
 
 export default function LoginForm({ onAuthenticated }){
   const [username, setUsername] = useState('admin')
@@ -14,11 +15,14 @@ export default function LoginForm({ onAuthenticated }){
       if (!res.ok) throw new Error(data.error || 'Login failed')
       localStorage.setItem('rmp_admin_token', data.accessToken)
       localStorage.setItem('rmp_admin_refresh', data.refreshToken)
+      sileo.success({ title: 'Sesión iniciada', description: 'Panel de administración listo.' })
       onAuthenticated && onAuthenticated()
     } catch (err) {
       localStorage.removeItem('rmp_admin_token')
       localStorage.removeItem('rmp_admin_refresh')
-      setError(err.message || 'Usuario o contraseña inválidos. Si cambiaste la clave, usa la última guardada en Configuración.')
+      const msg = err.message || 'Usuario o contraseña inválidos. Si cambiaste la clave, usa la última guardada en Configuración.'
+      setError(msg)
+      sileo.error({ title: 'No se pudo iniciar sesión', description: msg })
     }
   }
 

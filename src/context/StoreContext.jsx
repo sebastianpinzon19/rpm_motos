@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { sileo } from 'sileo'
 import { initialData } from '../data/initialData'
 
 const STORAGE_KEY = 'rmp_data_v1'
@@ -165,16 +166,28 @@ export const StoreProvider = ({ children }) => {
           if (raw) {
             const parsed = JSON.parse(raw)
             setFromPayload(parsed)
+            sileo.warning({
+              title: 'Sin conexión con la API',
+              description: 'Mostrando datos guardados en este dispositivo.'
+            })
             return
           }
         } catch (storageErr) {
           console.error('Error loading storage fallback', storageErr)
+          sileo.error({
+            title: 'Datos locales dañados',
+            description: storageErr?.message || 'No se pudo leer la copia guardada.'
+          })
         }
 
         setBrands(initialData.brands)
         setCategories(initialData.categories)
         setProducts(initialData.products.map(sanitizeProduct))
         setSettings(initialData.settings)
+        sileo.info({
+          title: 'Modo demostración',
+          description: 'No hay API ni datos guardados; se muestra el catálogo de ejemplo.'
+        })
       } finally {
         setIsHydrated(true)
       }
@@ -194,6 +207,10 @@ export const StoreProvider = ({ children }) => {
         setSettings(clean.settings)
       } catch (err) {
         console.error('Error syncing storage state', err)
+        sileo.warning({
+          title: 'Sincronización entre pestañas',
+          description: err?.message || 'No se pudo aplicar el cambio desde otra ventana.'
+        })
       }
     }
     window.addEventListener('storage', onStorage)
@@ -219,9 +236,14 @@ export const StoreProvider = ({ children }) => {
         body: JSON.stringify(next)
       }, true)
       setFromPayload(data)
+      sileo.success({ title: 'Producto actualizado', description: next.name })
     } catch (err) {
       console.error('Error updating product', err)
       setProducts(prev => prev.map(p => p.id === id ? next : p))
+      sileo.error({
+        title: 'No se guardó en el servidor',
+        description: err?.message || 'Los cambios quedaron solo en este navegador.'
+      })
     }
   }
 
@@ -231,9 +253,11 @@ export const StoreProvider = ({ children }) => {
         method: 'PATCH'
       }, true)
       setFromPayload(data)
+      sileo.success({ title: 'Estado del producto', description: 'Visibilidad actualizada correctamente.' })
     } catch (err) {
       console.error('Error toggling product active state', err)
       setProducts(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p))
+      sileo.error({ title: 'No se actualizó en el servidor', description: err?.message || 'Revisa la sesión o la API.' })
     }
   }
 
@@ -245,9 +269,11 @@ export const StoreProvider = ({ children }) => {
         body: JSON.stringify({ stock: cleanStock })
       }, true)
       setFromPayload(data)
+      sileo.success({ title: 'Stock actualizado', description: `Nuevo stock: ${cleanStock}` })
     } catch (err) {
       console.error('Error updating stock', err)
       setProducts(prev => prev.map(p => p.id === id ? { ...p, stock: cleanStock } : p))
+      sileo.error({ title: 'Stock no guardado en el servidor', description: err?.message || 'Valor aplicado solo en local.' })
     }
   }
 
@@ -260,9 +286,11 @@ export const StoreProvider = ({ children }) => {
         body: JSON.stringify(cleanProduct)
       }, true)
       setFromPayload(data)
+      sileo.success({ title: 'Producto creado', description: cleanProduct.name })
     } catch (err) {
       console.error('Error adding product', err)
       setProducts(prev => [cleanProduct, ...prev])
+      sileo.error({ title: 'No se creó en el servidor', description: err?.message || 'El producto quedó solo en este navegador.' })
     }
   }
 
@@ -272,9 +300,11 @@ export const StoreProvider = ({ children }) => {
         method: 'PATCH'
       }, true)
       setFromPayload(data)
+      sileo.success({ title: 'Categoría', description: 'Estado actualizado correctamente.' })
     } catch (err) {
       console.error('Error toggling category', err)
       setCategories(prev => prev.map(c => c.id === id ? { ...c, active: !c.active } : c))
+      sileo.error({ title: 'Categoría no actualizada', description: err?.message || 'Revisa la API o la sesión.' })
     }
   }
 
@@ -289,9 +319,14 @@ export const StoreProvider = ({ children }) => {
         body: JSON.stringify(next)
       }, true)
       setFromPayload(data)
+      sileo.success({ title: 'Configuración guardada', description: 'Los cambios ya están en el servidor.' })
     } catch (err) {
       console.error('Error updating settings', err)
       setSettings(prev => ({ ...prev, ...next }))
+      sileo.error({
+        title: 'No se guardó en el servidor',
+        description: err?.message || 'Los valores quedaron solo en este navegador.'
+      })
     }
   }
 

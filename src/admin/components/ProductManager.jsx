@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { sileo } from 'sileo'
 import { useStore } from '../../context/StoreContext'
 
 const emptyForm = {
@@ -23,8 +24,6 @@ export default function ProductManager() {
   const [showAdd, setShowAdd] = useState(false)
   const [newForm, setNewForm] = useState(emptyForm)
   const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState('')
-  const [token, setToken] = useState(localStorage.getItem('adminToken') || '')
 
   const byId = useMemo(() => Object.fromEntries(products.map(p => [p.id, p])), [products])
 
@@ -50,27 +49,27 @@ export default function ProductManager() {
     if (!file) return
     
     setUploading(true)
-    setUploadError('')
-    
+
     try {
       const formData = new FormData()
       formData.append('image', file)
-      
+
+      const accessToken = localStorage.getItem('rmp_admin_token')
       const response = await fetch('/api/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
         },
         body: formData
       })
-      
+
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({}))
         throw new Error(error.error || 'Error al subir imagen')
       }
-      
+
       const data = await response.json()
-      
+
       if (field === 'images') {
         formSetter(prev => ({
           ...prev,
@@ -86,9 +85,13 @@ export default function ProductManager() {
           }
         }))
       }
+      sileo.success({ title: 'Imagen subida', description: 'Ya está disponible en el formulario.' })
     } catch (err) {
-      setUploadError(err.message)
       console.error('Upload error:', err)
+      sileo.error({
+        title: 'Error al subir',
+        description: err.message || 'No se pudo completar la subida.'
+      })
     } finally {
       setUploading(false)
     }
@@ -130,12 +133,6 @@ export default function ProductManager() {
         <h2 className="text-xl font-semibold">Gestión de Productos</h2>
         <button aria-label="Agregar producto" onClick={() => setShowAdd(!showAdd)} className="bg-primary text-white px-3 py-2 rounded">Agregar producto</button>
       </div>
-
-      {uploadError && (
-        <div className="bg-red-900/50 border border-red-700 rounded p-3 text-red-100">
-          {uploadError}
-        </div>
-      )}
 
       {showAdd && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-surface2 p-3 rounded">

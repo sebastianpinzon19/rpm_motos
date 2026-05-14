@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { sileo } from 'sileo'
 import { useStore } from '../../context/StoreContext'
 
 export default function SettingsManager() {
@@ -19,10 +20,12 @@ export default function SettingsManager() {
       if (newPassword || currentPassword) {
         if (newPassword !== confirmPassword) {
           setError('Las contraseñas no coinciden')
+          sileo.warning({ title: 'Contraseña', description: 'Las contraseñas no coinciden.' })
           return
         }
         if (newPassword.length < 8) {
           setError('La nueva contraseña debe tener al menos 8 caracteres')
+          sileo.warning({ title: 'Contraseña', description: 'La nueva contraseña debe tener al menos 8 caracteres.' })
           return
         }
         await changeAdminPassword({ currentPassword, newPassword })
@@ -32,9 +35,11 @@ export default function SettingsManager() {
       }
       setSaved(true)
       setMessage('Configuración guardada.')
+      sileo.success({ title: 'Listo', description: 'Configuración guardada correctamente.' })
       setTimeout(() => setSaved(false), 1200)
     } catch (err) {
       setError(err.message || 'No se pudo guardar')
+      sileo.error({ title: 'Error al guardar', description: err.message || 'No se pudo guardar.' })
     }
   }
 
