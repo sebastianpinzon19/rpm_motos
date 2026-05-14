@@ -110,7 +110,7 @@ Nota sobre el backend:
 
 ---
 
-## Configurar backend en producción (opción recomendada)
+## Configurar backend externo en producción (opcional)
 
 Recomendación rápida:
 1. Desplegar PostgreSQL en un servicio gestionado (Supabase, Render Postgres, Railway).
