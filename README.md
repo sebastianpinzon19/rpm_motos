@@ -70,8 +70,8 @@ Pasos:
 3. En Vercel > Settings > Build & Output, verifica:
    - Build Command: `npm run vercel-build`
    - Output Directory: `dist`
-4. (Opcional) Añade variables de entorno para producción en Vercel:
-   - `VITE_API_BASE` → URL pública de tu API (si el backend está desplegado por separado).
+4. **Obligatorio si el API no está en el mismo dominio:** en Vercel > Settings > Environment Variables añade `VITE_API_BASE` con la URL pública de tu backend (sin barra final), por ejemplo `https://tu-servicio.railway.app`. Sin esto, el front intenta `/api/...` en Vercel (no existe) y verás avisos de “sin conexión” o modo demo.
+5. En el servidor Express, incluye la URL exacta de tu web en Vercel dentro de `ALLOWED_ORIGINS` (CORS); si no, el navegador bloqueará las respuestas aunque el API exista.
 
 Nota sobre el backend:
 - El backend Express está pensado para desarrollo local. Para producción tienes 2 opciones:

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { sileo } from 'sileo'
 import { initialData } from '../data/initialData'
+import { apiUrl } from '../utils/apiUrl'
 
 const STORAGE_KEY = 'rmp_data_v1'
 
@@ -90,7 +91,7 @@ const adminTokenStorage = {
 const refreshAccessToken = async () => {
   const refreshToken = adminTokenStorage.getRefresh()
   if (!refreshToken) throw new Error('No refresh token')
-  const response = await fetch('/api/auth/refresh', {
+  const response = await fetch(apiUrl('/api/auth/refresh'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken })
@@ -112,13 +113,13 @@ const apiRequest = async (url, options = {}, requiresAdmin = false, retryOn401 =
     if (token) headers['Authorization'] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, { ...options, headers })
+  const response = await fetch(apiUrl(url), { ...options, headers })
 
   if (response.status === 401 && requiresAdmin && retryOn401) {
     try {
       const newToken = await refreshAccessToken()
       const retryHeaders = { ...headers, Authorization: `Bearer ${newToken}` }
-      const retryResponse = await fetch(url, { ...options, headers: retryHeaders })
+      const retryResponse = await fetch(apiUrl(url), { ...options, headers: retryHeaders })
       if (!retryResponse.ok) {
         const payload = await retryResponse.json().catch(() => ({}))
         throw new Error(payload.error || `API error ${retryResponse.status}`)
@@ -168,7 +169,9 @@ export const StoreProvider = ({ children }) => {
             setFromPayload(parsed)
             sileo.warning({
               title: 'Sin conexión con la API',
-              description: 'Mostrando datos guardados en este dispositivo.'
+              description: import.meta.env.PROD && !String(import.meta.env.VITE_API_BASE || '').trim()
+                ? 'Falta VITE_API_BASE en el build (URL del backend). Mientras tanto se usan datos guardados en este dispositivo.'
+                : 'Mostrando datos guardados en este dispositivo.'
             })
             return
           }
@@ -186,7 +189,9 @@ export const StoreProvider = ({ children }) => {
         setSettings(initialData.settings)
         sileo.info({
           title: 'Modo demostración',
-          description: 'No hay API ni datos guardados; se muestra el catálogo de ejemplo.'
+          description: import.meta.env.PROD && !String(import.meta.env.VITE_API_BASE || '').trim()
+            ? 'Define VITE_API_BASE en Vercel con la URL pública de tu API y vuelve a desplegar. Añade la URL de esta web en ALLOWED_ORIGINS del servidor.'
+            : 'No hay API ni datos guardados; se muestra el catálogo de ejemplo.'
         })
       } finally {
         setIsHydrated(true)

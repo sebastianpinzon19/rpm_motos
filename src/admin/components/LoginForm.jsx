@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { sileo } from 'sileo'
+import { apiUrl } from '../../utils/apiUrl'
 
 export default function LoginForm({ onAuthenticated }){
   const [username, setUsername] = useState('admin')
@@ -10,7 +11,7 @@ export default function LoginForm({ onAuthenticated }){
     e.preventDefault()
     setError(null)
     try {
-      const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) })
+      const res = await fetch(apiUrl('/api/auth/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Login failed')
       localStorage.setItem('rmp_admin_token', data.accessToken)

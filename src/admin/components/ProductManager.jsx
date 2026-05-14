@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { sileo } from 'sileo'
+import { apiUrl } from '../../utils/apiUrl'
 import { useStore } from '../../context/StoreContext'
 
 const emptyForm = {
@@ -55,7 +56,7 @@ export default function ProductManager() {
       formData.append('image', file)
 
       const accessToken = localStorage.getItem('rmp_admin_token')
-      const response = await fetch('/api/upload', {
+      const response = await fetch(apiUrl('/api/upload'), {
         method: 'POST',
         headers: {
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
