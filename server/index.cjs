@@ -331,14 +331,14 @@ const ensureDatabaseReady = async () => {
       pool = nextPool
       return pool
     })()
-    try {
-      await startupPromise
-    } catch (error) {
-      startupPromise = undefined
-      throw error
-    }
   }
-  await startupPromise
+  const readyPromise = startupPromise
+  try {
+    await readyPromise
+  } catch (error) {
+    if (startupPromise === readyPromise) startupPromise = undefined
+    throw error
+  }
 }
 
 // Auth endpoints
