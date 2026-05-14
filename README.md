@@ -64,29 +64,46 @@ Abre `http://localhost:8787` (o el `PORT` que definas): catálogo, rutas de Reac
 npm run build
 ```
 
-En Vercel u otro hosting **solo estático** no existe `/api` en ese dominio: define `VITE_API_BASE` o despliega todo con `npm start` en un host Node.
+En Vercel u otro hosting **solo estático** no existe `/api` en ese dominio: usa **`API_PROXY_TARGET`** + `middleware.js`, o **`VITE_API_BASE`**, o despliega todo con `npm start` en un host Node.
 
 ---
 
-## Despliegue en Vercel (Frontend estático)
+## Despliegue en Vercel (https://rpm-motos.vercel.app)
 
-He preparado el proyecto para que el frontend se despliegue automáticamente en Vercel:
+Vercel solo aloja el **build estático** (`dist/`). El **API Express** debe estar en otro servicio (Railway, Render, Fly…) con `npm start`, o al menos publicado con Node + Postgres.
 
-- Archivo `vercel.json` configurado para servir `dist/` (output de `vite build`).
-- Script `vercel-build` en `package.json` que ejecuta `npm run build`.
+### Qué hace este repo en Vercel
 
-Pasos:
-1. Subir el repo a GitHub/GitLab/Bitbucket.
-2. Conectar el repo en Vercel y configurar el proyecto.
-3. En Vercel > Settings > Build & Output, verifica:
-   - Build Command: `npm run vercel-build`
-   - Output Directory: `dist`
-4. **Obligatorio si el API no está en el mismo dominio:** en Vercel > Settings > Environment Variables añade `VITE_API_BASE` con la URL pública de tu backend (sin barra final), por ejemplo `https://tu-servicio.railway.app`. Sin esto, el front intenta `/api/...` en Vercel (no existe) y verás avisos de “sin conexión” o modo demo.
-5. En el servidor Express, incluye la URL exacta de tu web en Vercel dentro de `ALLOWED_ORIGINS` (CORS); si no, el navegador bloqueará las respuestas aunque el API exista.
+1. **`vercel.json`** usa `buildCommand` + `outputDirectory: dist` (ya no se reenvía `/api` al disco equivocado).
+2. **`middleware.js`** (Node en Vercel) **reenvía** las peticiones a tu API real:
+   - `/api/*` → tu servidor Express  
+   - `/products/*` → mismo servidor (imágenes subidas y estáticos del API)
+
+### Pasos obligatorios en Vercel
+
+1. **Variables de entorno** (Settings → Environment Variables → Production):
+   - **`API_PROXY_TARGET`** = URL raíz de tu API **sin barra final**, por ejemplo `https://rmp-motos-production.up.railway.app`  
+   - No hace falta `VITE_API_BASE` si usas este proxy (el navegador sigue llamando a `/api/...` en tu dominio `.vercel.app`).
+
+2. **En el servidor Express** (Railway, etc.):
+   - **`ALLOWED_ORIGINS`**: incluye `https://rpm-motos.vercel.app` (y preview si usas previews de Vercel).
+   - El API debe estar accesible por HTTPS desde internet.
+
+3. **Redeploy** en Vercel tras guardar variables (el build no inyecta `API_PROXY_TARGET` en el JS del front; el middleware lo lee en runtime).
+
+### Si aún falla
+
+- Comprueba en el navegador **Network** → `/api/store`: si ves **503** con JSON `API no configurada`, falta `API_PROXY_TARGET` en Vercel.
+- Si ves **502**, Vercel no alcanza tu URL (mal escrita, API caída o firewall).
+- Si el API responde **403** en admin, casi siempre es **CORS / origen**: revisa `ALLOWED_ORIGINS` en el backend.
+
+### Alternativa sin proxy
+
+- Definir **`VITE_API_BASE`** en Vercel (build) apuntando al API (el cliente llama directo al otro dominio) **y** CORS en el backend. El proxy anterior evita exponer dos dominios al usuario y evita `VITE_API_BASE`.
 
 Nota sobre el backend:
 - **Recomendado (mismo sitio):** `npm run build` y `npm start` en Render/Railway/etc.: la web y `/api` comparten dominio; no necesitas `VITE_API_BASE`.
-- Si el front está solo en **Vercel estático** y el API en otro sitio: define `VITE_API_BASE` en Vercel y `ALLOWED_ORIGINS` en el API.
+- Si el front está solo en **Vercel estático** y el API en otro sitio: usa **`API_PROXY_TARGET`** en Vercel (recomendado) o `VITE_API_BASE` + CORS en el API.
 - Migrar el backend a funciones serverless (`/api/*`) en Vercel es otra opción (refactor aparte).
 
 ---
@@ -96,7 +113,7 @@ Nota sobre el backend:
 Recomendación rápida:
 1. Desplegar PostgreSQL en un servicio gestionado (Supabase, Render Postgres, Railway).
 2. Desplegar Node con **Build:** `npm run build` y **Start:** `npm start` (misma app sirve `dist/` y la API).
-3. Si en cambio el front sigue en Vercel y el API aparte: añade `VITE_API_BASE` en Vercel apuntando al servidor Node.
+3. Si el front sigue en Vercel y el API aparte: configura **`API_PROXY_TARGET`** en Vercel (middleware) o **`VITE_API_BASE`** en el build (cliente directo al API).
 
 Variables a establecer en tu host de backend:
 - `NODE_ENV=production`
@@ -127,7 +144,7 @@ El panel admin ahora permite **subir imágenes directamente**:
 3. **Almacenamiento**:
    - Las imágenes se guardan en `public/products/` con nombre UUID
    - Sirven vía Express static middleware en `/products/[filename]`
-   - En producción (Vercel): considera usar Cloudinary o S3 para almacenamiento persistente
+   - En **Vercel** con `API_PROXY_TARGET`, `/products/*` se proxifica al mismo Node que el API.
 
 ### Workflow típico
 
